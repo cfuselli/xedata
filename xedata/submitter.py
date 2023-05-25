@@ -6,9 +6,7 @@ import numpy as np
 from itertools import zip_longest
 import os, glob
 
-MY_PATH = '/dali/lgrandi/cfuselli/'
-XEDATA_PATH = os.path.join(MY_PATH, 'software/xedata')
-OUTPUT_FOLDER = os.path.join(MY_PATH, 'bipo_data_new_plugins/')
+from defaults import MY_PATH, XEDATA_PATH , OUTPUT_FOLDER
 
 def parse_args():
 
@@ -17,10 +15,10 @@ def parse_args():
                         help='process - will process the runs with the specified targets in process_data.py'
                              'is_stored - check if targets are stored '
                              'save - saves data to dataframes')
-    parser.add_argument('--npergroup','-n', type=int, default=20,
+    parser.add_argument('--n_per_job','-n', type=int, default=20,
                         help='how many runs per job')
-    parser.add_argument('--source', '-s', type=str, default='none',
-                        help='possible sources [ted, none, ar37, kr83m, rn220]')
+    parser.add_argument('--runs', '-r', type=str, default='none',
+                        help='file (txt) in /runs_selection to source (without extension)')
     parser.add_argument('--mem_per_cpu', '-m', type=int, default=10000,
                         help='mb per cpu')
     parser.add_argument('--container', '-c', type=str, default='2022.06.3',
@@ -51,8 +49,8 @@ def main():
     args = parse_args()
 
     mode = args.mode
-    npergroup = args.npergroup
-    source = args.source
+    n_per_job = args.n_per_job
+    runs = args.runs
     mem_per_cpu = args.mem_per_cpu
     container = args.container
     partition = args.partition
@@ -61,8 +59,8 @@ def main():
     if (mode == 'process') | (mode == 'save'):
         submit_jobs(
             mode=mode,
-            npergroup=npergroup,
-            source=source,
+            n_per_job=n_per_job,
+            runs=runs,
             mem_per_cpu=mem_per_cpu, 
             container=container,
             qos=qos,
@@ -72,8 +70,8 @@ def main():
     elif mode == 'save-dep':
         submitted_jobs = submit_jobs(
             mode='process',
-            npergroup=npergroup,
-            source=source,
+            n_per_job=n_per_job,
+            runs=runs,
             mem_per_cpu=mem_per_cpu, 
             container=container,
             qos=qos,
@@ -84,8 +82,8 @@ def main():
 
             dependency_jobs = submit_jobs(
                 mode='save',
-                npergroup=int(npergroup*20),
-                source=source,
+                n_per_job=int(n_per_job*20),
+                runs=runs,
                 mem_per_cpu=int(mem_per_cpu/2), 
                 container=container,
                 qos=qos,
@@ -98,14 +96,14 @@ def main():
 
     return
 
-def submit_jobs(mode, npergroup, source, mem_per_cpu, container, partition, qos, **kwargs):
+def submit_jobs(mode, n_per_job, runs, mem_per_cpu, container, partition, qos, **kwargs):
 
     from utilix import batchq
 
     container_file = f'xenonnt-{container}.simg'
     output_folder = OUTPUT_FOLDER
 
-    runs_filename = os.path.join(XEDATA_PATH, f'run_selection/nton_official_sr0_{source}.txt')
+    runs_filename = os.path.join(XEDATA_PATH, f'run_selection/{runs}.txt')
     log_dir =       os.path.join(XEDATA_PATH,'logs/')
     pyfile =        os.path.join(XEDATA_PATH,'xedata/process_data.py')
 
@@ -114,11 +112,11 @@ def submit_jobs(mode, npergroup, source, mem_per_cpu, container, partition, qos,
         run_ids = [line.rstrip() for line in run_ids]
 
     if mode == 'save':
-        for f in glob.glob(os.path.join(XEDATA_PATH, f"dataframes_tmp/*{source}*.npy")):
+        for f in glob.glob(os.path.join(XEDATA_PATH, f"dataframes_tmp/*{ #TODO }*.npy")):
             os.remove(f)
 
 
-    list_of_groups = list(zip_longest(*(iter(run_ids),) * npergroup))
+    list_of_groups = list(zip_longest(*(iter(run_ids),) * n_per_job))
 
     status = f"""
 -------------------------------------------------------------
@@ -138,15 +136,13 @@ def submit_jobs(mode, npergroup, source, mem_per_cpu, container, partition, qos,
 
     print('Preparing to process:')
     for i in range(len(list_of_groups)):
-        log = log_dir + ('log_'+mode+'_'+source+'_%i.sh' % i)
-        jobname = ('job_'+mode+'_'+source+'_%i' % i)
-
-
+        log = log_dir + ('log_'+mode+'_'+{runs}+'_%i.sh' % i)
+        jobname = ('job_'+mode+'_'+runs+'_%i' % i)
 
         jobstring = f"""
         echo "Starting process_data"
-        echo "{i} {npergroup} {output_folder}"
-        python {pyfile} -i {i} -n {npergroup} -o {output_folder} -r {runs_filename} -m {mode} -s {source}
+        echo "{i} {n_per_job} {output_folder}"
+        python {pyfile} -i {i} -n {n_per_job} -r {runs_filename} -m {mode} -r {runs_filename}
         echo "Script complete, bye byeee!"
         echo `date`
         """
@@ -157,9 +153,8 @@ def submit_jobs(mode, npergroup, source, mem_per_cpu, container, partition, qos,
                           jobname=jobname,
                           mem_per_cpu=mem_per_cpu,
                           container=container_file,
-                          partition='dali',
-                          qos='dali',
-                          exclude_nodes='dali001',
+                          partition=partition,
+                          qos=qos,
                           **kwargs
                           )
         

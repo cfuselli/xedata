@@ -9,11 +9,9 @@ def parse_args():
 
     parser = ArgumentParser()
     parser.add_argument('-i', '--index', type=int, help='index of the current job')
-    parser.add_argument('-n', '--npergroup', type=int, help='how many runs per job')
-    parser.add_argument('-dfo', '--df-output', type=str, help='output folder for processed data')
+    parser.add_argument('-n', '--n_per_job', type=int, help='how many runs per job')
     parser.add_argument('-r', '--runs-filename', type=str, help='file containing the list of run IDs')
     parser.add_argument('-m', '--mode', type=str, help='processing mode')
-    parser.add_argument('-s', '--source', type=str, help='source for processing')
     
     args = parser.parse_args()
 
@@ -45,7 +43,7 @@ def get_context():
 
     return st
 
-def process_data(run_ids, index, npergroup, runs_filename, mode, source):
+def process_data(run_ids, index, n_per_job, runs_filename, mode, source):
 
     import strax
     import straxen
@@ -81,7 +79,7 @@ def process_data(run_ids, index, npergroup, runs_filename, mode, source):
     else:
         return
 
-def save_data(run_ids, index, npergroup, runs_filename, mode, source, df_output):
+def save_data(run_ids, index, n_per_job, runs_filename, mode, source, df_output):
 
     import strax
     import straxen
@@ -113,7 +111,7 @@ def main():
     args = parse_args()
 
     index = args.index
-    npergroup = args.npergroup
+    n_per_job = args.n_per_job
     runs_filename = args.runs_filename
     mode = args.mode
     source = args.source
@@ -122,13 +120,13 @@ def main():
     with open(runs_filename) as file:
         run_ids = file.readlines()
         run_ids = [line.rstrip() for line in run_ids]
-    run_ids = run_ids[index * npergroup: (index + 1) * npergroup]
+    run_ids = run_ids[index * n_per_job: (index + 1) * n_per_job]
 
     if mode == 'process':
-        process_data(run_ids, index, npergroup, runs_filename, mode, source)
+        process_data(run_ids, index, n_per_job, runs_filename, mode, source)
 
     elif mode == 'save':
-        save_data(run_ids, index, npergroup, runs_filename, mode, source, df_output)
+        save_data(run_ids, index, n_per_job, runs_filename, mode, source, df_output)
 
 if __name__ == "__main__":
     main()
