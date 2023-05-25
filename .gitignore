@@ -1,0 +1,10 @@
+
+# exclude everything
+logs/*
+dataframes_tmp/*
+# exception to the rule
+!logs/.gitkeep 
+!dataframes_tmp/.gitkeep 
+
+*.egg*
+
