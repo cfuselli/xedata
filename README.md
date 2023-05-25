@@ -1,81 +1,99 @@
-# xedata
+Certainly! Here's the documentation for the options you provided:
 
-xedata is a Python package designed for processing and saving XENONnT data. It provides a command-line interface (CLI) for convenient data processing and offers various options for customization. This document serves as a guide to installing xedata, understanding its functionalities, and using it effectively.
+```markdown
+## xedata - Documentation
 
-## Installation
+This package provides tools for processing, saving, merging, and performing various operations on data. It supports batch job submission using SLURM.
 
-To install xedata, follow these steps:
+### Installation
 
-1. Clone the xedata repository 
-(Please note: clone the repository in a directory where you have space, like on /dali or /project2, not in /home !):
+To install the package in user-develop mode, follow these steps:
+
+1. Clone the repository (in /dali or /project2):
 
    ```shell
+   cd /dali/$USER/
    git clone https://github.com/cfuselli/xedata.git
    ```
 
-2. Navigate to the cloned directory:
+2. Navigate to the repository directory:
 
    ```shell
    cd xedata
    ```
 
-3. Install the package using pip with the user develop option:
+3. Install the package:
 
    ```shell
    pip install --user -e .
    ```
 
-   This will install xedata in development mode, allowing you to make changes to the code without reinstalling.
+### Usage
 
-   Note: Make sure you have the required dependencies installed before proceeding with the installation.
+The package provides the following modes of operation:
 
-## Usage
+- `process`: Processes the runs with the specified targets in `process_data.py`.
+- `save`: Saves data to dataframes.
+- `merge`: Merges data from multiple sources.
+- `doall`: Performs all the operations above.
 
-The xedata package provides a CLI with multiple commands to process and manage XENONnT data. Here's an overview of the available commands:
-
-### `xedata process`
-
-The `process` command is used to process XENONnT data. It performs data processing operations based on the specified parameters.
+To run the package, use the following command:
 
 ```shell
-xedata process [options]
+xedata <mode> <label> [options]
 ```
 
-Available options:
+#### Available Options
 
-- `-n, --num_jobs`: The number of parallel jobs to run. Default is 1.
-- `-o, --output_folder`: The output folder for the processed data. Default is "./output".
-- `-f, --runs_file`: The file containing the list of run IDs. Default is "./runs.txt".
-- `-m, --mode`: The processing mode. Default is "mode1".
-- `-s, --source`: The data source. Default is "source1".
+- `mode`: Mode of operation. Choose one of the following:
+  - `process`: Processes the runs with the specified targets in `process_data.py`.
+  - `save`: Saves data to dataframes.
+  - `merge`: Merges data from multiple sources.
+  - `doall`: Performs all the operations above.
 
-The processing mode and data source can be selected based on your specific requirements. Please refer to the documentation or the source code for detailed information about available modes and sources.
+- `label`: Name of the sbatch submission.
 
+- `--targets`, `-t`: Strax data type name(s) that should be produced with live processing. Multiple targets can be specified by separating them with spaces. Default: `event_info`.
 
+- `--n_per_job`, `-n`: Number of runs per job. Default: 100.
 
-## Examples
+- `--runs`, `-r`: File (txt) in `/runs_selection` to source (without extension). Default: `nton_official_sr0_none`.
 
-Here are some examples of how to use xedata:
+- `--mem_per_cpu`, `-m`: Memory per CPU in megabytes. Default: 10000.
 
-- Process data using 10 parallel jobs:
-  ```shell
-  xedata process -n 10 -o /path/to/output -f runs.txt -m mode1 -s source1
-  ```
+- `--container`, `-c`: Versioned container to use. Default: `2022.06.3`.
 
-- Process data in a different mode and source:
-  ```shell
-  xedata process -n 5 -o /path/to/output -f runs.txt -m mode2 -s source2
-  ```
+- `--context`, `-ct`: Cutax context to use. Default: `xenonnt_v8`.
 
-Please refer to the documentation for more details on the available processing modes and sources.
+- `--partition`, `-p`: SLURM partition to use. See `utilix.batchq` for available options. Default: `dali`.
 
-## Contributing
+- `--qos`, `-q`: SLURM quality of service to use. See `utilix.batchq` for available options. Default: `dali`.
 
-Contributions to xedata are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the GitHub repository.
+- `--selection_str`, `-s`: Selection string to load data. See `strax.get_array` for more information. Default: empty.
 
-## License
+### Before Running
 
-This project is licensed under the MIT License. See the LICENSE file for more information.
-```
+Before running the command, make sure to modify the paths and configurations according to your setup. Adjust the paths and options in the `submitter.py` file to match your environment.
 
-Feel free to modify and customize this README to fit your specific needs.
+### Examples
+
+1. Process runs with live processing:
+
+   ```shell
+   xedata process rn220_events --targets event_info peak_info --n_per_job 50
+   ```
+
+   This command processes the runs with the `event_info` and `peak_info` targets, with 50 runs per job.
+
+2. Save data to dataframes:
+
+   ```shell
+   xedata save rn220_dataframes --runs nton_official_sr0_none --container 2022.06.3
+   ```
+
+   This command saves the data to dataframes using the specified runs and container.
+
+3. Merge data from multiple sources:
+
+   ```shell
+   xedata merge rn220_merge --runs nton_official_sr0_none rn220_runs_v2 --selection_str 'time

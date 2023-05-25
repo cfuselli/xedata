@@ -149,7 +149,7 @@ def process_data(
             print('\n\nBuilidng' + run_id + '  ' + t)
             start_time = time.time()
             try:
-                st.make(run_id,t,save=t)
+                st.make(run_id,t)
                 print(t, '%.2f' % (time.time() - start_time))
             except Exception as e:
                 failures = True
@@ -161,7 +161,7 @@ def process_data(
     if failures:
         raise
     else:
-        return
+        return 0
 
 def save_data(
             index ,

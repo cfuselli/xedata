@@ -2,9 +2,12 @@
 # exclude everything
 logs/*
 dataframes_tmp/*
+strax_data/
 # exception to the rule
 !logs/.gitkeep 
 !dataframes_tmp/.gitkeep 
+!strax_data/.gitkeep
+
 
 
 # XENON secrets: run database passwords, S3 keys, etc.
