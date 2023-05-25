@@ -2,6 +2,8 @@
 
 This package provides tools for processing, saving, merging, and performing various operations on data. It supports batch job submission using SLURM.
 
+Author: Carlo Fuselli
+
 ### Installation
 
 To install the package in user-develop mode, follow these steps:
@@ -110,3 +112,9 @@ Before running the command, make sure to modify the paths and configurations acc
 ```
 
 Please note that the above documentation assumes that you have set up your environment and dependencies correctly. Adjustments may be needed based on your specific configuration.
+
+### Extrax
+
+ * Try to run `sqq` to see the list of your running and pending jobs, including information about their dependencies!
+ 
+ * You can also type xd instead of xedata 

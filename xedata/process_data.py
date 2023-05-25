@@ -193,9 +193,9 @@ def save_data(
     time.sleep(2)
 
     if not only_one_job:
-        filename = f'{XEDATA_PATH}/hdf5/{label}-{i}.npy'
+        filename = f'{XEDATA_PATH}/dataframes_tmp/{label}-{i}.npy'
     else:
-        filename = f'{XEDATA_PATH}/hdf5/{label}.npy'
+        filename = f'{XEDATA_PATH}/dataframes_tmp/{label}.npy'
 
     with open(filename, 'wb') as f:
         np.save(f, df)
@@ -206,7 +206,7 @@ def save_data(
 
 def merge_data():
 
-    path =   os.path.join(XEDATA_PATH, 'hdf5')
+    path =   os.path.join(XEDATA_PATH, 'dataframes_tmp')
     outname = os.path.join(path, f'{label}.npy')
 
     all_files = glob.glob(os.path.join(path, f'{label}-*.npy'))

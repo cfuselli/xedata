@@ -107,7 +107,7 @@ def main():
             save_jobs = submit(
                 mode='save',
                 label=label, 
-                n_per_job=int(n_per_job*10),
+                n_per_job=int(n_per_job*5),
                 targets=targets, 
                 runs=runs, 
                 mem_per_cpu=mem_per_cpu,  
