@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 from argparse import ArgumentParser
+from pathlib import Path
 
 from defaults import MY_PATH, XEDATA_PATH , OUTPUT_FOLDER
 
@@ -98,7 +99,10 @@ def save_data(run_ids, index, n_per_job, runs_filename, mode, source, df_output)
                 )
 
     time.sleep(2)
-    with open(f'{XEDATA_PATH}/hdf5/df_{source}_{i}.npy', 'wb') as f:
+
+
+
+    with open(f'{XEDATA_PATH}/hdf5/df_{Path(runs_filename).stem}_{i}.npy', 'wb') as f:
         np.save(f, df)
 
     print('\nLoaded and saved!')
