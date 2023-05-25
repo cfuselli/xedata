@@ -1,6 +1,8 @@
 ## xedata - Documentation
 
-This package provides tools for processing, saving, merging, and performing various operations on data. It supports batch job submission using SLURM.
+This package provides tools for processing and saving XENONnT data. It supports batch job submission using SLURM.
+
+This is my personal framework that I use to submit jobs to load and save data of data that is currently on /dali, or to process home-made plugins and test them.
 
 Author: Carlo Fuselli
 
@@ -11,7 +13,7 @@ To install the package in user-develop mode, follow these steps:
 1. Clone the repository (in /dali or /project2):
 
    ```shell
-   cd /dali/$USER/
+   cd /dali/lgrandi/$USER/
    git clone https://github.com/cfuselli/xedata.git
    ```
 

@@ -22,10 +22,10 @@ def parse_args():
     parser.add_argument('--targets', '-t', nargs='*', default='event_info'.split(),
         help="Strax data type name(s) that should be produced with live processing. Separated by a space")
 
-    parser.add_argument('--n_per_job','-n', type=int, default=100,
+    parser.add_argument('--n_per_job','-n', type=int, default=35,
                         help='how many runs per job')
 
-    parser.add_argument('--runs', '-r', type=str, default='nton_official_sr0_none',
+    parser.add_argument('--runs', '-r', type=str, default='runfile_test',
                         help='file (txt) in /runs_selection to source (without extension)')
 
     parser.add_argument('--mem_per_cpu', '-m', type=int, default=10000,
@@ -76,6 +76,10 @@ def main():
     partition = args.partition
     qos = args.qos
 
+    if mode == 'merge':
+        n_per_job = 999999
+
+
     if (mode == 'process') | (mode == 'save') | (mode == 'merge'):
         submit(
         mode=mode, 
@@ -125,7 +129,7 @@ def main():
                 n_per_job=9999999,
                 targets=targets, 
                 runs=runs, 
-                mem_per_cpu=int(mem_per_cpu/2),  
+                mem_per_cpu=int(mem_per_cpu*2),  
                 container=container, 
                 partition=partition, 
                 qos=qos,
@@ -212,7 +216,7 @@ python {process_data_file} \
                           container=container_file,
                           partition=partition,
                           qos=qos,
-                          exclude_nodes='dali001',
+                          exclude_nodes='dali001,dali003',
                           **kwargs
                           )
         

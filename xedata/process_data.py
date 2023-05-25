@@ -2,6 +2,7 @@ import numpy as np
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
+import os, glob 
 
 from xedata.defaults import MY_PATH, XEDATA_PATH , OUTPUT_FOLDER
 
@@ -87,13 +88,7 @@ def main():
     elif mode == 'merge':
 
         merge_data(
-            index = index,
-            n_per_job = n_per_job,
-            label = label,
-            mode = mode,
-            targets = targets,
-            run_ids = run_ids,
-            context=context
+            label = label
         )
     
     else:
@@ -193,18 +188,18 @@ def save_data(
     time.sleep(2)
 
     if not only_one_job:
-        filename = f'{XEDATA_PATH}/dataframes_tmp/{label}-{i}.npy'
+        filename = f'{XEDATA_PATH}/dataframes_tmp/{label}-{index}.npy'
     else:
         filename = f'{XEDATA_PATH}/dataframes_tmp/{label}.npy'
 
     with open(filename, 'wb') as f:
         np.save(f, df)
 
-    print('\nLoaded and saved: {filename}')
+    print(f'Loaded and saved: {filename}')
     print('%.2f' % (time.time() - start_time))
 
 
-def merge_data():
+def merge_data(label):
 
     path =   os.path.join(XEDATA_PATH, 'dataframes_tmp')
     outname = os.path.join(path, f'{label}.npy')
@@ -213,6 +208,9 @@ def merge_data():
     all_files.sort(key=lambda x: int(''.join(filter(str.isdigit, x))))
 
     print(all_files)
+
+    if len(all_files)==0:
+        raise ValueError("No dataframes found with the requested label {label}")
 
     for i,f in enumerate(all_files):
         x = np.load(f)
