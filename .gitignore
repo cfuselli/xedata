@@ -21,6 +21,8 @@ xenon_secrets.py
 *.npy
 *.blosc
 *.h5
+straxe_data
+resource_cache
 
 # cProfile output
 *.prof
