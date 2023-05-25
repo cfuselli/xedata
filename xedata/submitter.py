@@ -10,11 +10,6 @@ MY_PATH = '/dali/lgrandi/cfuselli/'
 XEDATA_PATH = os.path.join(MY_PATH, 'software/xedata')
 OUTPUT_FOLDER = os.path.join(MY_PATH, 'bipo_data_new_plugins/')
 
-# To remove eventually
-import sys
-sys.path.insert(0, "/home/cfuselli/software/")
-sys.path.insert(0, "/home/cfuselli/software/utilix")
-
 def parse_args():
 
     parser = ArgumentParser()
@@ -104,10 +99,6 @@ def main():
     return
 
 def submit_jobs(mode, npergroup, source, mem_per_cpu, container, partition, qos, **kwargs):
-
-    import sys
-    sys.path.insert(0, "/home/cfuselli/software/")
-    sys.path.insert(0, "/home/cfuselli/software/utilix")
 
     from utilix import batchq
 
