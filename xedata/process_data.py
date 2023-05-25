@@ -1,5 +1,24 @@
 import numpy as np
 import sys
+from argparse import ArgumentParser
+
+from defaults import MY_PATH, XEDATA_PATH , OUTPUT_FOLDER
+
+def parse_args():
+
+
+    parser = ArgumentParser()
+    parser.add_argument('-i', '--index', type=int, help='index of the current job')
+    parser.add_argument('-n', '--npergroup', type=int, help='how many runs per job')
+    parser.add_argument('-dfo', '--df-output', type=str, help='output folder for processed data')
+    parser.add_argument('-r', '--runs-filename', type=str, help='file containing the list of run IDs')
+    parser.add_argument('-m', '--mode', type=str, help='processing mode')
+    parser.add_argument('-s', '--source', type=str, help='source for processing')
+    
+    args = parser.parse_args()
+
+    return args
+
 
 targets = [
     'event_info',
@@ -12,18 +31,21 @@ save_targets = [
 selection_str = ""
 
 
-def get_context(output_folder):
+def get_context():
 
     import strax
     import straxen
     import cutax
 
     straxen.print_versions()
-    st = cutax.contexts.xenonnt_v8(output_folder=output_folder) # 23 June 2022
+    st = cutax.contexts.xenonnt_v8(output_folder=OUTPUT_FOLDER)
+
+    import extra_plugins
+    st.register_all(extra_plugins)
 
     return st
 
-def process_data(run_ids, index, npergroup, output_folder, runs_filename, mode, source):
+def process_data(run_ids, index, npergroup, runs_filename, mode, source):
 
     import strax
     import straxen
@@ -34,7 +56,7 @@ def process_data(run_ids, index, npergroup, output_folder, runs_filename, mode, 
     print('Total runs:', len(run_ids))
     print(run_ids)
 
-    st = get_context(output_folder)
+    st = get_context()
 
     # Add your data processing logic here
 
@@ -59,7 +81,7 @@ def process_data(run_ids, index, npergroup, output_folder, runs_filename, mode, 
     else:
         return
 
-def save_data(run_ids, index, npergroup, output_folder, runs_filename, mode, source, df_output):
+def save_data(run_ids, index, npergroup, runs_filename, mode, source, df_output):
 
     import strax
     import straxen
@@ -69,7 +91,7 @@ def save_data(run_ids, index, npergroup, output_folder, runs_filename, mode, sou
     print('\n\nLoading...')            
     start_time = time.time()
 
-    st = get_context(output_folder)
+    st = get_context()
 
     df = st.get_array(run_ids, 
                 save_targets, 
@@ -78,7 +100,7 @@ def save_data(run_ids, index, npergroup, output_folder, runs_filename, mode, sou
                 )
 
     time.sleep(2)
-    with open(f'/dali/lgrandi/cfuselli/jobs_new/hdf5/df_{source}_{i}.npy', 'wb') as f:
+    with open(f'{XEDATA_PATH}/hdf5/df_{source}_{i}.npy', 'wb') as f:
         np.save(f, df)
 
     print('\nLoaded and saved!')
@@ -86,22 +108,12 @@ def save_data(run_ids, index, npergroup, output_folder, runs_filename, mode, sou
 
 
 def main():
-    from argparse import ArgumentParser
+ 
 
-
-    parser = ArgumentParser()
-    parser.add_argument('-i', '--index', type=int, help='index of the current job')
-    parser.add_argument('-n', '--npergroup', type=int, help='how many runs per job')
-    parser.add_argument('-o', '--output-folder', type=str, help='output folder for processed data')
-    parser.add_argument('-dfo', '--df-output', type=str, help='output folder for processed data')
-    parser.add_argument('-r', '--runs-filename', type=str, help='file containing the list of run IDs')
-    parser.add_argument('-m', '--mode', type=str, help='processing mode')
-    parser.add_argument('-s', '--source', type=str, help='source for processing')
-    args = parser.parse_args()
+    args = parse_args()
 
     index = args.index
     npergroup = args.npergroup
-    output_folder = args.output_folder
     runs_filename = args.runs_filename
     mode = args.mode
     source = args.source
@@ -113,10 +125,10 @@ def main():
     run_ids = run_ids[index * npergroup: (index + 1) * npergroup]
 
     if mode == 'process':
-        process_data(run_ids, index, npergroup, output_folder, runs_filename, mode, source)
+        process_data(run_ids, index, npergroup, runs_filename, mode, source)
 
     elif mode == 'save':
-        save_data(run_ids, index, npergroup, output_folder, runs_filename, mode, source, df_output)
+        save_data(run_ids, index, npergroup, runs_filename, mode, source, df_output)
 
 if __name__ == "__main__":
     main()

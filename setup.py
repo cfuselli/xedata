@@ -11,4 +11,7 @@ setup(
     'console_scripts': [
         'xedata = xedata.submitter:main'
     ]}
+    install_requires=[
+        'utilix',
+    ]
 )
