@@ -200,10 +200,7 @@ python {process_data_file} \
     --targets {" ".join(targets)} \
     --runs_filename {runs_filename} \
 
-
-exit 1
-
-        """
+"""
 
 
         print('Submitting %i/%i' % (i, total_n_jobs-1), jobname)
