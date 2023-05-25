@@ -142,7 +142,7 @@ def process_data(
 
     # Add your data processing logic here
 
-    exceptions = False
+    failures = False
 
     for run_id in run_ids:
         for t in targets:
