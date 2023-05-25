@@ -1,6 +1,3 @@
-Certainly! Here's the documentation for the options you provided:
-
-```markdown
 ## xedata - Documentation
 
 This package provides tools for processing, saving, merging, and performing various operations on data. It supports batch job submission using SLURM.
@@ -83,7 +80,7 @@ Before running the command, make sure to modify the paths and configurations acc
    xedata process rn220_events --targets event_info peak_info --n_per_job 50
    ```
 
-   This command processes the runs with the `event_info` and `peak_info` targets, with 50 runs per job.
+   This command processes the runs with the `event_info` and `event_basics` targets, with 50 runs per job.
 
 2. Save data to dataframes:
 
@@ -96,4 +93,20 @@ Before running the command, make sure to modify the paths and configurations acc
 3. Merge data from multiple sources:
 
    ```shell
-   xedata merge rn220_merge --runs nton_official_sr0_none rn220_runs_v2 --selection_str 'time
+   xedata merge rn220_merge --runs nton_official_sr0_none rn220_runs_v2 --selection_str 'time>0'
+   ```
+
+   This command merges data from two sources, filtering based on the provided selection string.
+
+4. Perform all operations:
+
+   ```shell
+   xedata doall bkg_events --targets event_info event_ --runs nton_official_sr0_none --container 2022.06.3
+   ```
+
+   This command performs all operations: processing, saving, and merging.
+
+```
+```
+
+Please note that the above documentation assumes that you have set up your environment and dependencies correctly. Adjustments may be needed based on your specific configuration.
