@@ -28,11 +28,79 @@ def parse_args():
     parser.add_argument('--targets', '-t', nargs='*', help="Strax data type name(s) that should be produced with live processing.")
     parser.add_argument('-r', '--runs-filename', '--runs_filename', type=str, help='file containing the list of run IDs')
     parser.add_argument('-c', '--context', default='xenonnt_v8', type=str, help='cutax context to use. For example, ')
+    parser.add_argument('-s', '--selection_str', default='', type=str, help='load data selection string, see strax and straxen get_array')
     
     args = parser.parse_args()
 
     return args
 
+
+def main():
+ 
+
+    args = parse_args()
+
+    index = args.index
+    n_per_job = args.n_per_job
+    label = args.label
+    mode = args.mode
+    targets = args.targets
+    runs_filename = args.runs_filename
+    context = args.context
+    selection_str = args.selection_str
+
+    print(f"Running in mode: {mode}" )
+
+    with open(runs_filename) as file:
+        _run_ids = file.readlines()
+        _run_ids = [line.rstrip() for line in _run_ids]
+    run_ids = _run_ids[index * n_per_job: (index + 1) * n_per_job]
+
+    only_one_job = ( len(run_ids) == len(_run_ids) )
+
+    if mode == 'process':
+        process_data(    
+            index = index,
+            n_per_job = n_per_job,
+            label = label,
+            mode = mode,
+            targets = targets,
+            run_ids = run_ids,
+            context=context
+        )
+
+
+    elif mode == 'save':
+        save_data(
+            index = index,
+            n_per_job = n_per_job,
+            label = label,
+            mode = mode,
+            targets = targets,
+            run_ids = run_ids,
+            context=context,
+            selection_str=selection_str,
+            only_one_job=only_one_job,
+        )
+        
+
+    elif mode == 'merge':
+
+        merge_data(
+            index = index,
+            n_per_job = n_per_job,
+            label = label,
+            mode = mode,
+            targets = targets,
+            run_ids = run_ids,
+            context=context
+        )
+    
+    else:
+
+        print("How did you arrive here? Something is off.")
+
+        
 
 
 def get_context(context):
@@ -102,7 +170,9 @@ def save_data(
             mode,
             targets,
             run_ids,
-            context
+            context,
+            selection_str,
+            only_one_job
             ):
 
     import strax
@@ -116,60 +186,51 @@ def save_data(
     st = get_context(context)
 
     df = st.get_array(run_ids, 
-                save_targets, 
+                targets, 
                 add_run_id_field=True,
                 selection_str=selection_str,
                 )
 
     time.sleep(2)
 
-    with open(f'{XEDATA_PATH}/hdf5/{label}-{i}.npy', 'wb') as f:
+    if not only_one_job:
+        filename = f'{XEDATA_PATH}/hdf5/{label}-{i}.npy'
+    else:
+        filename = f'{XEDATA_PATH}/hdf5/{label}.npy'
+
+    with open(filename, 'wb') as f:
         np.save(f, df)
 
-    print('\nLoaded and saved!')
+    print('\nLoaded and saved: {filename}')
     print('%.2f' % (time.time() - start_time))
 
 
-def main():
- 
+def merge_data():
 
-    args = parse_args()
+    path =   os.path.join(XEDATA_PATH, 'hdf5')
+    outname = os.path.join(path, f'{label}.npy')
 
-    index = args.index
-    n_per_job = args.n_per_job
-    label = args.label
-    mode = args.mode
-    targets = args.targets
-    runs_filename = args.runs_filename
-    context = args.context
+    all_files = glob.glob(os.path.join(path, f'{label}-*.npy'))
+    all_files.sort(key=lambda x: int(''.join(filter(str.isdigit, x))))
 
-    with open(runs_filename) as file:
-        run_ids = file.readlines()
-        run_ids = [line.rstrip() for line in run_ids]
-    run_ids = run_ids[index * n_per_job: (index + 1) * n_per_job]
+    print(all_files)
 
-    if mode == 'process':
-        process_data(    
-            index = index,
-            n_per_job = n_per_job,
-            label = label,
-            mode = mode,
-            targets = targets,
-            run_ids = run_ids,
-            context=context
-        )
+    for i,f in enumerate(all_files):
+        x = np.load(f)
+        if i == 0:
+            new = x
+        else:
+            new = np.concatenate([new,x])
+            
+    np.save(outname, new)
 
 
-    elif mode == 'save':
-        save_data(
-            index = index,
-            n_per_job = n_per_job,
-            label = label,
-            mode = mode,
-            targets = targets,
-            run_ids = run_ids,
-            context=context
-        )
+    for fdel in all_files:
+        print(f"Deleting part file {fdel}")
+        os.remove(fdel)
+
+    print("Finished!")
+
 
 if __name__ == "__main__":
     main()

@@ -1,35 +1,57 @@
-
 # xedata
 
-xedata is a package for processing and saving XENONnT data.
+xedata is a Python package designed for processing and saving XENONnT data. It provides a command-line interface (CLI) for convenient data processing and offers various options for customization. This document serves as a guide to installing xedata, understanding its functionalities, and using it effectively.
 
 ## Installation
 
-To install xedata, you can use pip with the user develop option:
+To install xedata, follow these steps:
 
-```shell
-pip install --user -e .
-```
+1. Clone the xedata repository 
+(Please note: clone the repository in a directory where you have space, like on /dali or /project2, not in /home !):
 
-This will install the package in development mode, allowing you to make changes to the code without reinstalling.
+   ```shell
+   git clone https://github.com/cfuselli/xedata.git
+   ```
 
-Note: Make sure you have the required dependencies installed before proceeding with the installation.
+2. Navigate to the cloned directory:
+
+   ```shell
+   cd xedata
+   ```
+
+3. Install the package using pip with the user develop option:
+
+   ```shell
+   pip install --user -e .
+   ```
+
+   This will install xedata in development mode, allowing you to make changes to the code without reinstalling.
+
+   Note: Make sure you have the required dependencies installed before proceeding with the installation.
 
 ## Usage
 
-After installing xedata, you can use the `xedata` command to process and save XENONnT data. Here are the available options:
+The xedata package provides a CLI with multiple commands to process and manage XENONnT data. Here's an overview of the available commands:
+
+### `xedata process`
+
+The `process` command is used to process XENONnT data. It performs data processing operations based on the specified parameters.
 
 ```shell
-xedata process -n <runs_per_job> -o <output_folder> -f <runs_file> -m <mode> -s <source>
+xedata process [options]
 ```
 
-- `-n, --num_jobs`: The number of runs per job.
-- `-o, --output_folder`: The output folder for the processed data.
-- `-f, --runs_file`: The file containing the list of run IDs.
-- `-m, --mode`: The processing mode.
-- `-s, --source`: The source for processing.
+Available options:
 
-Before running the command, make sure to modify the paths accordingly in the configuration files or as command-line arguments.
+- `-n, --num_jobs`: The number of parallel jobs to run. Default is 1.
+- `-o, --output_folder`: The output folder for the processed data. Default is "./output".
+- `-f, --runs_file`: The file containing the list of run IDs. Default is "./runs.txt".
+- `-m, --mode`: The processing mode. Default is "mode1".
+- `-s, --source`: The data source. Default is "source1".
+
+The processing mode and data source can be selected based on your specific requirements. Please refer to the documentation or the source code for detailed information about available modes and sources.
+
+
 
 ## Examples
 

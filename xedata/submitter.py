@@ -11,7 +11,7 @@ from xedata.defaults import MY_PATH, XEDATA_PATH , OUTPUT_FOLDER
 def parse_args():
 
     parser = ArgumentParser()
-    parser.add_argument('mode', type=str, choices=['process', 'is_stored', 'save', 'save-dep'],
+    parser.add_argument('mode', type=str, choices=['process', 'save', 'merge', 'doall'],
                         help='process - will process the runs with the specified targets in process_data.py'
                              'is_stored - check if targets are stored '
                              'save - saves data to dataframes')
@@ -43,6 +43,8 @@ def parse_args():
     parser.add_argument('--qos', '-q', type=str, default='dali',
                         help='qos, see utilix.batchq')
 
+    parser.add_argument('--selection_str', '-s', type=str, default='',
+                        help='selection str to load data, see strax.get_array')
 
     args = parser.parse_args()
 
@@ -74,7 +76,7 @@ def main():
     partition = args.partition
     qos = args.qos
 
-    if (mode == 'process') | (mode == 'save'):
+    if (mode == 'process') | (mode == 'save') | (mode == 'merge'):
         submit(
         mode=mode, 
         label=label, 
@@ -88,9 +90,9 @@ def main():
         qos=qos
         )
     
-    elif mode == 'save-dep':
+    elif mode == 'doall':
         submitted_jobs = submit(
-        mode=mode, 
+        mode='process', 
         label=label, 
         n_per_job=n_per_job,
         targets=targets, 
@@ -102,7 +104,7 @@ def main():
         qos=qos)
         
         if not None in submitted_jobs:
-            dependency_jobs = submit(
+            save_jobs = submit(
                 mode='save',
                 label=label, 
                 n_per_job=int(n_per_job*20),
@@ -112,7 +114,23 @@ def main():
                 container=container, 
                 partition=partition, 
                 qos=qos,
+                context=context,
                 dependency=submitted_jobs
+                )
+
+        if (not None in save_jobs):
+            merge_jobs = submit(
+                mode='merge',
+                label=label, 
+                n_per_job=9999999,
+                targets=targets, 
+                runs=runs, 
+                mem_per_cpu=int(mem_per_cpu/2),  
+                container=container, 
+                partition=partition, 
+                qos=qos,
+                context=context,
+                dependency=save_jobs
                 )
 
         else:
@@ -141,12 +159,12 @@ def submit(mode, n_per_job, targets, runs, mem_per_cpu, container, partition, qo
             os.remove(f)
 
 
-    list_of_groups = list(zip_longest(*(iter(run_ids),) * n_per_job))
+    total_n_jobs = len(list(zip_longest(*(iter(run_ids),) * n_per_job)))
 
     status = f"""
 -------------------------------------------------------------
     - Mode: {mode}
-    - Submitting {len(list_of_groups)} jobs
+    - Submitting {total_n_jobs} jobs
     - Container: {container}
     - Output Folder: {output_folder}
     - Runs Filename: {runs_filename}
@@ -160,28 +178,35 @@ def submit(mode, n_per_job, targets, runs, mem_per_cpu, container, partition, qo
     submitted_jobs = []
 
     print('Preparing to process:')
-    for i in range(len(list_of_groups)):
+    for i in range(total_n_jobs):
         log = os.path.join(log_dir, f'log_{mode}_{label}_{i}.sh')
         jobname = f'{mode}_{label}_{i}'
 
+        # set -e is necessary to tell bash to raise errors, fundamental for dependencies
+        # TODO: move this command to utilix template
         jobstring = f"""
-        echo "Starting process_data"
-        echo "{i} {n_per_job} {output_folder}"
+set -e
 
-        python {process_data_file} \
-            --index {i} \
-            --n_per_job {n_per_job} \
-            --mode {mode} \
-            --label {label} \
-            --context {context} \
-            --targets {" ".join(targets)} \
-            --runs_filename {runs_filename}
+echo "Starting process_data"
+echo `date`
+echo "{i} {n_per_job} {output_folder}"
 
-        echo "Script complete, bye byeee!"
-        echo `date`
+python {process_data_file} \
+    --index {i} \
+    --n_per_job {n_per_job} \
+    --mode {mode} \
+    --label {label} \
+    --context {context} \
+    --targets {" ".join(targets)} \
+    --runs_filename {runs_filename} \
+
+
+exit 1
+
         """
 
-        print('Submitting %i/%i' % (i, len(list_of_groups)-1), jobname)
+
+        print('Submitting %i/%i' % (i, total_n_jobs-1), jobname)
         # Utilix function to submit jobs
         job_id = submit_job(jobstring,
                           log=log,
