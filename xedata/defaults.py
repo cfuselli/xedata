@@ -1,7 +1,9 @@
 import os, glob
 
-MY_PATH = '/dali/lgrandi/cfuselli/'
+USER = os.getenv('USER', default=None)
+
+MY_PATH = f'/dali/lgrandi/{USER}/'
+OUTPUT_FOLDER = f'/dali/lgrandi/{USER}/test_xedata/'
 
 XEDATA_PATH = os.path.join(MY_PATH, 'software/xedata')
-OUTPUT_FOLDER = os.path.join(MY_PATH, 'bipo_data_new_plugins/')
 

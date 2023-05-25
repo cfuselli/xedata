@@ -1,0 +1,4 @@
+# bash_scripts/sq.sh
+#!/usr/bin/env bash
+echo Printing submitted jobs
+squeue -u $USER -o '%.18i %.9P %38j %.8u %.2t %.10M %.6D %R'

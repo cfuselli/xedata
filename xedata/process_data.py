@@ -3,48 +3,63 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
-from defaults import MY_PATH, XEDATA_PATH , OUTPUT_FOLDER
+from xedata.defaults import MY_PATH, XEDATA_PATH , OUTPUT_FOLDER
+
+"""
+This file is called in submitter.py with:
+
+        python {process_data_file} \
+            --index {i} \
+            --n_per_job {n_per_job} \
+            --mode {mode} \
+            --label {label} \
+            --targets {targets} \
+            --runs_filename {runs_filename}
+"""
 
 def parse_args():
 
 
     parser = ArgumentParser()
     parser.add_argument('-i', '--index', type=int, help='index of the current job')
-    parser.add_argument('-n', '--n_per_job', type=int, help='how many runs per job')
-    parser.add_argument('-r', '--runs-filename', type=str, help='file containing the list of run IDs')
+    parser.add_argument('-n', '--n_per_job', '--n-per-job', type=int, help='how many runs per job')
+    parser.add_argument('-l', '--label', type=str, help='Name for the job batch, like rn220_events')
     parser.add_argument('-m', '--mode', type=str, help='processing mode')
+    parser.add_argument('--targets', '-t', nargs='*', help="Strax data type name(s) that should be produced with live processing.")
+    parser.add_argument('-r', '--runs-filename', '--runs_filename', type=str, help='file containing the list of run IDs')
+    parser.add_argument('-c', '--context', default='xenonnt_v8', type=str, help='cutax context to use. For example, ')
     
     args = parser.parse_args()
 
     return args
 
 
-targets = [
-    'event_info',
-]
 
-save_targets = [
-    'event_info',
-]
-
-selection_str = ""
-
-
-def get_context():
+def get_context(context):
 
     import strax
     import straxen
     import cutax
 
     straxen.print_versions()
-    st = cutax.contexts.xenonnt_v8(output_folder=OUTPUT_FOLDER)
+    st = getattr(cutax.contexts, context)(output_folder=OUTPUT_FOLDER)
 
     import extra_plugins
     st.register_all(extra_plugins)
 
+    print(st._plugin_class_registry)
+    
     return st
 
-def process_data(run_ids, index, n_per_job, runs_filename, mode, source):
+def process_data(
+            index ,
+            n_per_job,
+            label,
+            mode,
+            targets,
+            run_ids,
+            context
+            ):
 
     import strax
     import straxen
@@ -55,11 +70,11 @@ def process_data(run_ids, index, n_per_job, runs_filename, mode, source):
     print('Total runs:', len(run_ids))
     print(run_ids)
 
-    st = get_context()
+    st = get_context(context)
 
     # Add your data processing logic here
 
-    failures = False
+    exceptions = False
 
     for run_id in run_ids:
         for t in targets:
@@ -76,11 +91,19 @@ def process_data(run_ids, index, n_per_job, runs_filename, mode, source):
     print('\n\nFinished')
     
     if failures:
-        raise Exception(e)
+        raise
     else:
         return
 
-def save_data(run_ids, index, n_per_job, runs_filename, mode, source, df_output):
+def save_data(
+            index ,
+            n_per_job,
+            label,
+            mode,
+            targets,
+            run_ids,
+            context
+            ):
 
     import strax
     import straxen
@@ -90,7 +113,7 @@ def save_data(run_ids, index, n_per_job, runs_filename, mode, source, df_output)
     print('\n\nLoading...')            
     start_time = time.time()
 
-    st = get_context()
+    st = get_context(context)
 
     df = st.get_array(run_ids, 
                 save_targets, 
@@ -100,9 +123,7 @@ def save_data(run_ids, index, n_per_job, runs_filename, mode, source, df_output)
 
     time.sleep(2)
 
-
-
-    with open(f'{XEDATA_PATH}/hdf5/df_{Path(runs_filename).stem}_{i}.npy', 'wb') as f:
+    with open(f'{XEDATA_PATH}/hdf5/{label}-{i}.npy', 'wb') as f:
         np.save(f, df)
 
     print('\nLoaded and saved!')
@@ -116,10 +137,11 @@ def main():
 
     index = args.index
     n_per_job = args.n_per_job
-    runs_filename = args.runs_filename
+    label = args.label
     mode = args.mode
-    source = args.source
-    df_output = args.df_output
+    targets = args.targets
+    runs_filename = args.runs_filename
+    context = args.context
 
     with open(runs_filename) as file:
         run_ids = file.readlines()
@@ -127,10 +149,27 @@ def main():
     run_ids = run_ids[index * n_per_job: (index + 1) * n_per_job]
 
     if mode == 'process':
-        process_data(run_ids, index, n_per_job, runs_filename, mode, source)
+        process_data(    
+            index = index,
+            n_per_job = n_per_job,
+            label = label,
+            mode = mode,
+            targets = targets,
+            run_ids = run_ids,
+            context=context
+        )
+
 
     elif mode == 'save':
-        save_data(run_ids, index, n_per_job, runs_filename, mode, source, df_output)
+        save_data(
+            index = index,
+            n_per_job = n_per_job,
+            label = label,
+            mode = mode,
+            targets = targets,
+            run_ids = run_ids,
+            context=context
+        )
 
 if __name__ == "__main__":
     main()

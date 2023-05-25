@@ -6,7 +6,7 @@ import numpy as np
 from itertools import zip_longest
 import os, glob
 
-from defaults import MY_PATH, XEDATA_PATH , OUTPUT_FOLDER
+from xedata.defaults import MY_PATH, XEDATA_PATH , OUTPUT_FOLDER
 
 def parse_args():
 
@@ -15,19 +15,35 @@ def parse_args():
                         help='process - will process the runs with the specified targets in process_data.py'
                              'is_stored - check if targets are stored '
                              'save - saves data to dataframes')
-    parser.add_argument('--n_per_job','-n', type=int, default=20,
+
+    parser.add_argument('label', type=str,
+                        help='Name of sbatch submission. Example: rn220_events')
+
+    parser.add_argument('--targets', '-t', nargs='*', default='event_info'.split(),
+        help="Strax data type name(s) that should be produced with live processing. Separated by a space")
+
+    parser.add_argument('--n_per_job','-n', type=int, default=100,
                         help='how many runs per job')
-    parser.add_argument('--runs', '-r', type=str, default='none',
+
+    parser.add_argument('--runs', '-r', type=str, default='nton_official_sr0_none',
                         help='file (txt) in /runs_selection to source (without extension)')
+
     parser.add_argument('--mem_per_cpu', '-m', type=int, default=10000,
                         help='mb per cpu')
+
     parser.add_argument('--container', '-c', type=str, default='2022.06.3',
                         help='Versioned container - default for SR0')
+    
+    parser.add_argument('-ct', '--context', default='xenonnt_v8', type=str, 
+                        help='cutax context to use. For example, ')
+
     parser.add_argument('--partition', '-p', type=str, default='dali',
                         help='partition, see utilix.batchq')
+
     parser.add_argument('--qos', '-q', type=str, default='dali',
                         help='qos, see utilix.batchq')
-    
+
+
     args = parser.parse_args()
 
     return args
@@ -43,51 +59,59 @@ def main():
     Carlo Fuselli (cfuselli@nikhef.nl)
     
     """
-
     print(welcome)
 
     args = parse_args()
 
     mode = args.mode
+    label = args.label
+    targets = args.targets
     n_per_job = args.n_per_job
     runs = args.runs
     mem_per_cpu = args.mem_per_cpu
     container = args.container
+    context = args.context
     partition = args.partition
     qos = args.qos
 
     if (mode == 'process') | (mode == 'save'):
-        submit_jobs(
-            mode=mode,
-            n_per_job=n_per_job,
-            runs=runs,
-            mem_per_cpu=mem_per_cpu, 
-            container=container,
-            qos=qos,
-            partition=partition
-            )
+        submit(
+        mode=mode, 
+        label=label, 
+        n_per_job=n_per_job,
+        targets=targets, 
+        runs=runs, 
+        mem_per_cpu=mem_per_cpu, 
+        container=container, 
+        context=context,
+        partition=partition, 
+        qos=qos
+        )
     
     elif mode == 'save-dep':
-        submitted_jobs = submit_jobs(
-            mode='process',
-            n_per_job=n_per_job,
-            runs=runs,
-            mem_per_cpu=mem_per_cpu, 
-            container=container,
-            qos=qos,
-            partition=partition
-            )
+        submitted_jobs = submit(
+        mode=mode, 
+        label=label, 
+        n_per_job=n_per_job,
+        targets=targets, 
+        runs=runs, 
+        mem_per_cpu=mem_per_cpu, 
+        container=container, 
+        partition=partition, 
+        context=context,
+        qos=qos)
         
         if not None in submitted_jobs:
-
-            dependency_jobs = submit_jobs(
+            dependency_jobs = submit(
                 mode='save',
+                label=label, 
                 n_per_job=int(n_per_job*20),
-                runs=runs,
-                mem_per_cpu=int(mem_per_cpu/2), 
-                container=container,
+                targets=targets, 
+                runs=runs, 
+                mem_per_cpu=int(mem_per_cpu/2),  
+                container=container, 
+                partition=partition, 
                 qos=qos,
-                partition=partition,
                 dependency=submitted_jobs
                 )
 
@@ -96,23 +120,24 @@ def main():
 
     return
 
-def submit_jobs(mode, n_per_job, runs, mem_per_cpu, container, partition, qos, **kwargs):
 
-    from utilix import batchq
+def submit(mode, n_per_job, targets, runs, mem_per_cpu, container, partition, qos, label, context, **kwargs):
+
+    from utilix.batchq import submit_job
 
     container_file = f'xenonnt-{container}.simg'
     output_folder = OUTPUT_FOLDER
 
     runs_filename = os.path.join(XEDATA_PATH, f'run_selection/{runs}.txt')
     log_dir =       os.path.join(XEDATA_PATH,'logs/')
-    pyfile =        os.path.join(XEDATA_PATH,'xedata/process_data.py')
+    process_data_file =        os.path.join(XEDATA_PATH,'xedata/process_data.py')
 
     with open(runs_filename) as file:
         run_ids = file.readlines()
         run_ids = [line.rstrip() for line in run_ids]
 
     if mode == 'save':
-        for f in glob.glob(os.path.join(XEDATA_PATH, f"dataframes_tmp/*{ #TODO }*.npy")):
+        for f in glob.glob(os.path.join(XEDATA_PATH, f"dataframes_tmp/{label}-*.npy")):
             os.remove(f)
 
 
@@ -125,7 +150,7 @@ def submit_jobs(mode, n_per_job, runs, mem_per_cpu, container, partition, qos, *
     - Container: {container}
     - Output Folder: {output_folder}
     - Runs Filename: {runs_filename}
-    - PythonFile: {pyfile}
+    - PythonFile: {process_data_file}
     - Logs: {XEDATA_PATH}/logs
 -------------------------------------------------------------
 
@@ -136,25 +161,36 @@ def submit_jobs(mode, n_per_job, runs, mem_per_cpu, container, partition, qos, *
 
     print('Preparing to process:')
     for i in range(len(list_of_groups)):
-        log = log_dir + ('log_'+mode+'_'+{runs}+'_%i.sh' % i)
-        jobname = ('job_'+mode+'_'+runs+'_%i' % i)
+        log = os.path.join(log_dir, f'log_{mode}_{label}_{i}.sh')
+        jobname = f'{mode}_{label}_{i}'
 
         jobstring = f"""
         echo "Starting process_data"
         echo "{i} {n_per_job} {output_folder}"
-        python {pyfile} -i {i} -n {n_per_job} -r {runs_filename} -m {mode} -r {runs_filename}
+
+        python {process_data_file} \
+            --index {i} \
+            --n_per_job {n_per_job} \
+            --mode {mode} \
+            --label {label} \
+            --context {context} \
+            --targets {" ".join(targets)} \
+            --runs_filename {runs_filename}
+
         echo "Script complete, bye byeee!"
         echo `date`
         """
 
         print('Submitting %i/%i' % (i, len(list_of_groups)-1), jobname)
-        job_id = batchq.submit_job(jobstring,
+        # Utilix function to submit jobs
+        job_id = submit_job(jobstring,
                           log=log,
                           jobname=jobname,
                           mem_per_cpu=mem_per_cpu,
                           container=container_file,
                           partition=partition,
                           qos=qos,
+                          exclude_nodes='dali001',
                           **kwargs
                           )
         

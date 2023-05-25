@@ -9,9 +9,8 @@ setup(
     description='A package for processing and saving XENONnT data',
     entry_points={
     'console_scripts': [
-        'xedata = xedata.submitter:main'
-    ]}
-    install_requires=[
-        'utilix',
-    ]
+        'xedata = xedata.submitter:main',
+        'xd = xedata.submitter:main'
+    ]},
+    scripts=['bin/sqq']
 )
