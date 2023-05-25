@@ -77,7 +77,7 @@ Before running the command, make sure to modify the paths and configurations acc
 1. Process runs with live processing:
 
    ```shell
-   xedata process rn220_events --targets event_info peak_info --n_per_job 50
+   xedata process bkg_events --runs nton_official_sr0_none --target event_info --n_per_job 50
    ```
 
    This command processes the runs with the `event_info` and `event_basics` targets, with 50 runs per job.
@@ -85,7 +85,7 @@ Before running the command, make sure to modify the paths and configurations acc
 2. Save data to dataframes:
 
    ```shell
-   xedata save rn220_dataframes --runs nton_official_sr0_none --container 2022.06.3
+   xedata save bkg_events --runs nton_official_sr0_none --target event_info --n_per_job 50 --container 2022.06.3
    ```
 
    This command saves the data to dataframes using the specified runs and container.
@@ -93,7 +93,7 @@ Before running the command, make sure to modify the paths and configurations acc
 3. Merge data from multiple sources:
 
    ```shell
-   xedata merge rn220_merge --runs nton_official_sr0_none rn220_runs_v2 --selection_str 'time>0'
+   xedata merge bkg_events --runs nton_official_sr0_none --target event_info --n_per_job 50 --selection_str 'time>0'
    ```
 
    This command merges data from two sources, filtering based on the provided selection string.
@@ -101,7 +101,7 @@ Before running the command, make sure to modify the paths and configurations acc
 4. Perform all operations:
 
    ```shell
-   xedata doall bkg_events --targets event_info event_ --runs nton_official_sr0_none --container 2022.06.3
+   xedata doall bkg_events
    ```
 
    This command performs all operations: processing, saving, and merging.
