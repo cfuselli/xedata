@@ -3,11 +3,13 @@
 logs/*
 dataframes_tmp/*
 strax_data/
+run_selection/
 # exception to the rule
 !logs/.gitkeep 
 !dataframes_tmp/.gitkeep 
 !strax_data/.gitkeep
-
+!run_selection/.gitkeep
+!run_selection/README.md
 
 
 # XENON secrets: run database passwords, S3 keys, etc.
